@@ -1,0 +1,109 @@
+# ============================================
+# Generator Platform - Git Ignore 配置
+# ============================================
+
+# ------------------- IDE / Editor -------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# ------------------- OS Files -------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.tmp
+*.bak
+*.log
+
+# ------------------- Environment -------------------
+.env
+.env.local
+.env.*.local
+
+# ------------------- Go -------------------
+# 可执行文件（保留源码即可重新编译）
+backend-service/backend-service.exe
+generator-service/generator-service.exe
+*.exe
+*.dll
+*.so
+*.dylib
+
+# 编译输出
+*.test
+*.out
+coverage.txt
+
+# Go workspace file
+go.work
+go.work.sum
+
+# ------------------- Node.js / Frontend -------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# 构建输出
+web-admin/dist/
+web-admin/build/
+!.vite/cache/
+
+# ------------------- Dependencies (可重新安装) -------------------
+vendor/
+
+# ------------------- Database -------------------
+*.db
+*.sqlite
+*.sqlite3
+
+# ------------------- Docker volumes (本地数据) -------------------
+pgdata/
+mongo-data/
+redis-data/
+
+# ------------------- Logs -------------------
+logs/
+*.log
+logs_*/
+
+# ------------------- Temp files -------------------
+tmp/
+temp/
+.cache/
+
+# ------------------- Generated files (可重新生成) -------------------
+*.zip
+*.tar.gz
+*.rar
+
+# ------------------- Sensitive files -------------------
+# 密钥、证书等（如果有）
+*.pem
+*.key
+*.crt
+secrets.yaml
+credentials.json
+
+# ------------------- Testing -------------------
+coverage/
+.nyc_output/
+.coverage
+htmlcov/
+.pyc
+__pycache__/
+
+# ------------------- Misc -------------------
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+next/
+out/
