@@ -646,7 +646,3 @@ Copyright (c) 2026 Generator Platform
 - **在线文档**: [USER_GUIDE.md](./USER_GUIDE.md) - 使用说明书
 - **技术文档**: [PROJECT_DOCUMENTATION.md](./PROJECT_DOCUMENTATION.md) - 架构与答辩 Q&A
 - **问题反馈**: 在 GitHub Issues 提交问题
-
----
-
-> 💡 **提示**: 如需更多技术细节，请参阅同目录下的 **PROJECT_DOCUMENTATION.md** 文件。
