@@ -1,10 +1,6 @@
 # 🚀 Generator Platform - 低代码代码生成平台
 
 <p align="center">
-  <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Modern%20web-based%20code%20generator%20platform%20dashboard%20with%20clean%20UI,%20dark%20theme,%20showing%20database%20tables,%20generated%20code%20preview,%20and%20project%20management%20interface&image_size=landscape_16_9" alt="Generator Platform" width="800"/>
-</p>
-
-<p align="center">
   <strong>基于 Go + React 的全栈低代码平台，通过可视化配置自动生成完整的后端应用程序代码</strong>
 </p>
 
@@ -385,8 +381,10 @@ docker exec local-postgres psql -U postgres -d generator_platform \
 ## 👨‍💻 作者
 
 **LeoNorth2004**
-
 - GitHub: [@LeoNorth2004](https://github.com/LeoNorth2004)
+
+**pluto8120-byte**
+- GitHub: [@pluto8120-byte](https://github.com/pluto8120-byte)
 
 ---
 
