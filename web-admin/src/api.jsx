@@ -1,31 +1,49 @@
+/**
+ * API 客户端封装
+ * 1. 统一 axios 实例与拦截器
+ * 2. 通过工厂函数生成各业务模块的 API 端点集合
+ */
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+const TOKEN_KEY = 'token';
+const USER_KEY = 'user';
+const LOGIN_PATH = '/login';
+const REQUEST_TIMEOUT = 60000;
+const DEFAULT_HEADER = 'Content-Type';
+const DEFAULT_CONTENT_TYPE = 'application/json';
+const AUTH_HEADER = 'Authorization';
+const AUTH_SCHEME = 'Bearer';
 
-const api = axios.create({
+const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 60000,
+  headers: { [DEFAULT_HEADER]: DEFAULT_CONTENT_TYPE },
+  timeout: REQUEST_TIMEOUT,
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+/**
+ * 请求拦截器：自动注入 token
+ */
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem(TOKEN_KEY);
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers[AUTH_HEADER] = `${AUTH_SCHEME} ${token}`;
   }
   return config;
 });
 
-api.interceptors.response.use(
+/**
+ * 响应拦截器：处理 401/403/网络错误
+ */
+apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    } else if (error.response?.status === 403) {
+    const status = error.response?.status;
+    if (status === 401) {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      window.location.href = LOGIN_PATH;
+    } else if (status === 403) {
       console.warn('Access denied: insufficient permissions');
     } else if (!error.response && error.message === 'Network Error') {
       console.error('Network error - backend may be unavailable');
@@ -34,62 +52,82 @@ api.interceptors.response.use(
   }
 );
 
-export const authAPI = {
-  login: (data) => api.post('/auth/login', data),
-  register: (data) => api.post('/auth/register', data),
-  getMe: () => api.get('/auth/me'),
+/**
+ * 构造 RESTful 资源 API
+ * 提供 list/get/create/update/delete 通用方法
+ */
+const createResourceApi = (basePath) => ({
+  list: (params) => apiClient.get(basePath, { params }),
+  get: (id) => apiClient.get(`${basePath}/${id}`),
+  create: (payload) => apiClient.post(basePath, payload),
+  update: (id, payload) => apiClient.put(`${basePath}/${id}`, payload),
+  delete: (id) => apiClient.delete(`${basePath}/${id}`),
+});
+
+const authAPI = {
+  login: (data) => apiClient.post('/auth/login', data),
+  register: (data) => apiClient.post('/auth/register', data),
+  getMe: () => apiClient.get('/auth/me'),
 };
 
-export const projectAPI = {
-  list: () => api.get('/projects'),
-  get: (id) => api.get(`/projects/${id}`),
-  create: (data) => api.post('/projects', data),
-  update: (id, data) => api.put(`/projects/${id}`, data),
-  delete: (id) => api.delete(`/projects/${id}`),
-  regenerate: (id) => api.post(`/generator/generate/${id}`),
+const projectAPI = {
+  ...createResourceApi('/projects'),
+  regenerate: (id) => apiClient.post(`/generator/generate/${id}`),
 };
 
-export const generatorAPI = {
-  generate: (data) => api.post('/generator/generate', data),
-  generateFromProject: (id) => api.post(`/generator/generate/${id}`),
-  download: (projectId) => api.get(`/generator/download/${projectId}`, { responseType: 'blob' }),
-  preview: (projectId) => api.get(`/generator/preview/${projectId}`),
+const generatorAPI = {
+  generate: (data) => apiClient.post('/generator/generate', data),
+  generateFromProject: (id) => apiClient.post(`/generator/generate/${id}`),
+  download: (projectId) =>
+    apiClient.get(`/generator/download/${projectId}`, { responseType: 'blob' }),
+  preview: (projectId) => apiClient.get(`/generator/preview/${projectId}`),
 };
 
-export const userAPI = {
-  list: () => api.get('/users'),
-  get: (id) => api.get(`/users/${id}`),
-  create: (data) => api.post('/users', data),
-  update: (id, data) => api.put(`/users/${id}`, data),
-  delete: (id) => api.delete(`/users/${id}`),
+const userAPI = createResourceApi('/users');
+
+const operationsAPI = {
+  health: () => apiClient.get('/operations/health'),
+  stats: () => apiClient.get('/operations/stats'),
+  getMetrics: () => apiClient.get('/operations/metrics'),
+  getServices: () => apiClient.get('/operations/services'),
+  getEvents: (lang) =>
+    apiClient.get(`/operations/events${lang ? `?lang=${lang}` : ''}`),
+  getOperationLogs: (params = {}) =>
+    apiClient.get('/operations/operation-logs', { params }),
+  recordOperationLog: (data) =>
+    apiClient.post('/operations/operation-logs/record', data),
 };
 
-export const operationsAPI = {
-  health: () => api.get('/operations/health'),
-  stats: () => api.get('/operations/stats'),
-  getMetrics: () => api.get('/operations/metrics'),
-  getServices: () => api.get('/operations/services'),
-  getEvents: (lang) => api.get(`/operations/events${lang ? '?lang=' + lang : ''}`),
-  getOperationLogs: (params = {}) => api.get('/operations/operation-logs', { params }),
-  recordOperationLog: (data) => api.post('/operations/operation-logs/record', data),
+const metadataAPI = {
+  register: (data) => apiClient.post('/generator/metadata/register', data),
+  get: (modelName) => apiClient.get(`/generator/metadata/${modelName}`),
+  list: () => apiClient.get('/generator/metadata'),
+  getSchema: (modelName) =>
+    apiClient.get(`/generator/metadata/${modelName}/schema`),
+  getHandlers: (modelName) =>
+    apiClient.get(`/generator/metadata/${modelName}/handlers`),
+  export: (modelName) =>
+    apiClient.get(`/generator/metadata/${modelName}/export`),
+  import: (data) => apiClient.post('/generator/metadata/import', data),
 };
 
-export const metadataAPI = {
-  register: (data) => api.post('/generator/metadata/register', data),
-  get: (modelName) => api.get(`/generator/metadata/${modelName}`),
-  list: () => api.get('/generator/metadata'),
-  getSchema: (modelName) => api.get(`/generator/metadata/${modelName}/schema`),
-  getHandlers: (modelName) => api.get(`/generator/metadata/${modelName}/handlers`),
-  export: (modelName) => api.get(`/generator/metadata/${modelName}/export`),
-  import: (data) => api.post('/generator/metadata/import', data),
+const engineAPI = {
+  getStats: () => apiClient.post('/generator/engine/stats'),
+  healthCheck: () => apiClient.get('/health'),
+  healthDetails: () => apiClient.get('/health/details'),
+  healthMetrics: () => apiClient.get('/health/metrics'),
+  healthHistory: () => apiClient.get('/health/history'),
 };
 
-export const engineAPI = {
-  getStats: () => api.post('/generator/engine/stats'),
-  healthCheck: () => api.get('/health'),
-  healthDetails: () => api.get('/health/details'),
-  healthMetrics: () => api.get('/health/metrics'),
-  healthHistory: () => api.get('/health/history'),
+export {
+  apiClient,
+  authAPI,
+  projectAPI,
+  generatorAPI,
+  userAPI,
+  operationsAPI,
+  metadataAPI,
+  engineAPI,
 };
 
-export default api;
+export default apiClient;

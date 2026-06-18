@@ -1,32 +1,57 @@
-export function GlassCard({ children, className = '', hover = false, ...props }) {
+/**
+ * 通用卡片组件
+ * GlassCard：玻璃态容器
+ * StatCard：统计数字卡片
+ * ChartCard：图表容器（带标题与可选操作）
+ */
+import { useMemo } from 'react';
+
+const BASE_GLASS_CLASS = 'glass-card p-6';
+const HOVER_CLASS = 'glass-card-hover';
+const DEFAULT_GLASS_CLASS = 'glass-card';
+
+const STAT_LABEL_CLASS = 'stat-label';
+const STAT_VALUE_CLASS = 'stat-value break-all overflow-wrap-anywhere';
+
+const isNumeric = (value) => {
+  if (typeof value === 'number') return true;
+  if (typeof value === 'string' && value !== '' && !Number.isNaN(Number(value))) {
+    return true;
+  }
+  return false;
+};
+
+export function GlassCard({ children, className = '', hover = false, ...rest }) {
+  const composedClass = `${hover ? HOVER_CLASS : DEFAULT_GLASS_CLASS} ${className}`.trim();
   return (
-    <div
-      className={`${hover ? 'glass-card-hover' : 'glass-card'} p-6 ${className}`}
-      {...props}
-    >
+    <div className={composedClass} {...rest}>
       {children}
     </div>
   );
 }
 
 export function StatCard({ title, value, icon, trend, subtitle }) {
-  const isNumericTrend = typeof trend === 'number' || (typeof trend === 'string' && !isNaN(trend) && trend !== '');
+  const showTrend = useMemo(() => isNumeric(trend), [trend]);
+  const trendDirection = useMemo(() => (Number(trend) > 0 ? '+' : ''), [trend]);
+  const trendColor = useMemo(
+    () => (Number(trend) > 0 ? 'text-green-500' : 'text-red-500'),
+    [trend]
+  );
 
   return (
     <GlassCard hover>
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-1 min-w-0 flex-1">
-          <span className="stat-label">{title}</span>
-          <span className="stat-value break-all overflow-wrap-anywhere">{value}</span>
-          {isNumericTrend && (
-            <span className={`text-sm ${Number(trend) > 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {Number(trend) > 0 ? '+' : ''}{trend}%
+          <span className={STAT_LABEL_CLASS}>{title}</span>
+          <span className={STAT_VALUE_CLASS}>{value}</span>
+          {showTrend && (
+            <span className={`text-sm ${trendColor}`}>
+              {trendDirection}
+              {trend}%
             </span>
           )}
-          {subtitle && !isNumericTrend && (
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {subtitle}
-            </span>
+          {subtitle && !showTrend && (
+            <span className="text-sm text-gray-500 dark:text-gray-400">{subtitle}</span>
           )}
         </div>
         {icon && (

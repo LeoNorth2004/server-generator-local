@@ -1,3 +1,9 @@
+/**
+ * 应用入口
+ * 1. 配置 React Router v7 future flags
+ * 2. 组合全局 Provider
+ * 3. 集中定义受保护路由
+ */
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -11,23 +17,48 @@ import Users from './pages/Users';
 import Operations from './pages/Operations';
 import Docs from './pages/Docs';
 
+const ROUTE_FUTURE_FLAGS = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
+
+const PROTECTED_ROUTES = [
+  { path: '/', element: <Home /> },
+  { path: '/projects', element: <Projects /> },
+  { path: '/generator', element: <Generator /> },
+  { path: '/users', element: <Users /> },
+  { path: '/operations', element: <Operations /> },
+  { path: '/docs', element: <Docs /> },
+];
+
+const LOGIN_PATH = '/login';
+const ROOT_PATH = '/';
+
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  return isAuthenticated ? children : <Navigate to={LOGIN_PATH} />;
+}
+
+function LoginRoute() {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <Navigate to={ROOT_PATH} /> : <Login />;
 }
 
 function AppRoutes() {
-  const { isAuthenticated } = useAuth();
-
   return (
     <Routes>
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
-      <Route path="/" element={<ProtectedRoute><Layout><Home /></Layout></ProtectedRoute>} />
-      <Route path="/projects" element={<ProtectedRoute><Layout><Projects /></Layout></ProtectedRoute>} />
-      <Route path="/generator" element={<ProtectedRoute><Layout><Generator /></Layout></ProtectedRoute>} />
-      <Route path="/users" element={<ProtectedRoute><Layout><Users /></Layout></ProtectedRoute>} />
-      <Route path="/operations" element={<ProtectedRoute><Layout><Operations /></Layout></ProtectedRoute>} />
-      <Route path="/docs" element={<ProtectedRoute><Layout><Docs /></Layout></ProtectedRoute>} />
+      <Route path={LOGIN_PATH} element={<LoginRoute />} />
+      {PROTECTED_ROUTES.map(({ path, element }) => (
+        <Route
+          key={path}
+          path={path}
+          element={
+            <ProtectedRoute>
+              <Layout>{element}</Layout>
+            </ProtectedRoute>
+          }
+        />
+      ))}
     </Routes>
   );
 }
@@ -37,12 +68,7 @@ function App() {
     <I18nProvider>
       <ThemeProvider>
         <AuthProvider>
-          <BrowserRouter
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true,
-            }}
-          >
+          <BrowserRouter future={ROUTE_FUTURE_FLAGS}>
             <AppRoutes />
           </BrowserRouter>
         </AuthProvider>
